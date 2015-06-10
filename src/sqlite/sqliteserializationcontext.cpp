@@ -1,15 +1,28 @@
 #include "sqliteserializationcontext.hpp"
 #include "serializationexception.hpp"
 #include "sqliteserialized.hpp"
+#include "transaction.hpp"
 #include <sstream>
+#include <thread>
 
 namespace seril {
 
-   SQLiteSerializationContext::SQLiteSerializationContext(sqlite3* db, const std::string& name, const IDataContract::Schema& schema)
-      : _map(), _stmt(nullptr)
+   SQLiteSerializationContext::SQLiteSerializationContext(sqlite3* db, const std::string& name, const IDataContract::Schema& schema, Transaction& transaction)
+      : _transaction(transaction), _map(), _stmt(nullptr), _db(db), _in_transaction(false)
    {
       if (schema.empty())
          throw SchemaIsEmptyException(name);
+
+      try {
+         if (_transaction.join())
+            check_errors(sqlite3_exec(_db, "BEGIN TRANSACTION", nullptr, nullptr, nullptr));
+      }
+      catch (...) {
+         _transaction.leave();
+         throw;
+      }
+
+      _in_transaction = true;
 
       std::stringstream sql;
 
@@ -41,12 +54,15 @@ namespace seril {
 
       const std::string replace(sql.str());
 
-      check_errors(sqlite3_prepare_v2(db, replace.data(), (int)replace.size(), &_stmt, nullptr));
+      check_errors(sqlite3_prepare_v2(_db, replace.data(), (int)replace.size(), &_stmt, nullptr));
    }
 
    SQLiteSerializationContext::~SQLiteSerializationContext() {
       if (_stmt != nullptr)
          sqlite3_finalize(_stmt);
+
+      if (_in_transaction && _transaction.leave())
+         sqlite3_exec(_db, "ROLLBACK TRANSACTION", nullptr, nullptr, nullptr);
    }
 
    ISerialized* SQLiteSerializationContext::apply() {
@@ -64,10 +80,32 @@ namespace seril {
 
       sqlite3_reset(_stmt);
 
+      if (_in_transaction && _transaction.complete()) {
+         size_t max_spins = 1000;
+
+         _in_transaction = false;
+
+         for (int rc;;) {
+            rc = sqlite3_exec(_db, "COMMIT TRANSACTION", nullptr, nullptr, nullptr);
+
+            if (rc != SQLITE_BUSY)
+               break;
+
+            if (max_spins == 0) {
+               sqlite3_exec(_db, "ROLLBACK TRANSACTION", nullptr, nullptr, nullptr);
+
+               throw Exception("Cannot commit the transaction, underlying provider is busy");
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            --max_spins;
+         }
+      }
+
       return new SQLiteSerialized(std::move(_pk_binds));
    }
 
-   void SQLiteSerializationContext::sint(const std::string& name, const int& value) {
+   void SQLiteSerializationContext::integer(const std::string& name, const int& value) {
       auto &slot = bind(name);
 
       check_errors(sqlite3_bind_int(_stmt, slot.position, value));
@@ -75,6 +113,41 @@ namespace seril {
       if (slot.is_pk)
          _pk_binds.insert(std::make_pair(name, [value](sqlite3_stmt* stmt, int position) {
             return sqlite3_bind_int(stmt, position, value);
+         }));
+   }
+
+   void SQLiteSerializationContext::number(const std::string& name, const double& value) {
+      auto &slot = bind(name);
+
+      check_errors(sqlite3_bind_double(_stmt, slot.position, (double)value));
+
+      if (slot.is_pk)
+         _pk_binds.insert(std::make_pair(name, [value](sqlite3_stmt* stmt, int position) {
+         return sqlite3_bind_double(stmt, position, (double)value);
+      }));
+   }
+
+   void SQLiteSerializationContext::string(const std::string& name, const std::string& value) {
+      auto &slot = bind(name);
+
+      check_errors(sqlite3_bind_text(_stmt, slot.position, value.data(), (int)value.size(), SQLITE_TRANSIENT));
+
+      if (slot.is_pk)
+         _pk_binds.insert(std::make_pair(name, [value](sqlite3_stmt* stmt, int position) {
+            return sqlite3_bind_text(stmt, position, value.data(), (int)value.size(), SQLITE_TRANSIENT);
+         }));
+   }
+
+   void SQLiteSerializationContext::wstring(const std::string& name, const std::wstring& value) {
+      static_assert(sizeof(std::wstring::value_type) != 16, "System's wchar_t is other than 16 bits long which is not supported");
+
+      auto &slot = bind(name);
+
+      check_errors(sqlite3_bind_text16(_stmt, slot.position, value.data(), (int)value.size(), SQLITE_TRANSIENT));
+
+      if (slot.is_pk)
+         _pk_binds.insert(std::make_pair(name, [value](sqlite3_stmt* stmt, int position) {
+            return sqlite3_bind_text16(stmt, position, value.data(), (int)value.size(), SQLITE_TRANSIENT);
          }));
    }
 

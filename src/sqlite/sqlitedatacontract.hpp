@@ -15,7 +15,7 @@ namespace seril {
       virtual ~SQLiteDataContract();
 
       virtual SQLiteQueryContext* query();
-      virtual SQLiteSerializationContext* serialization(const std::string& name, const Schema& schema);
+      virtual SQLiteSerializationContext* serialization(const std::string& name, const Schema& schema, Transaction& transaction);
       virtual SQLiteDeserializationContext* deserialization(const std::string& name, const Schema& schema, const std::shared_ptr<ISerialized>& serialized);
 
       SQLiteDataContract& operator =(SQLiteDataContract&& other);

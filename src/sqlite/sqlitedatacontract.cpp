@@ -5,7 +5,9 @@
 
 namespace seril {
 
-   SQLiteDataContract::SQLiteDataContract(sqlite3* db) : _db(db), _closed_set() {
+   SQLiteDataContract::SQLiteDataContract(sqlite3* db)
+      : _db(db), _closed_set()
+   {
 
    }
 
@@ -24,10 +26,10 @@ namespace seril {
       return new SQLiteQueryContext();
    }
 
-   SQLiteSerializationContext* SQLiteDataContract::serialization(const std::string& name, const IDataContract::Schema& schema) {
+   SQLiteSerializationContext* SQLiteDataContract::serialization(const std::string& name, const IDataContract::Schema& schema, Transaction& transaction) {
       use_schema(name, schema);
 
-      return new SQLiteSerializationContext(_db, name, schema);
+      return new SQLiteSerializationContext(_db, name, schema, transaction);
    }
 
    SQLiteDeserializationContext* SQLiteDataContract::deserialization(const std::string& name, const IDataContract::Schema& schema, const std::shared_ptr<ISerialized>& serialized) {

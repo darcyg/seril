@@ -20,17 +20,23 @@ namespace seril {
 
       typedef std::unordered_map<std::string, std::function<int(sqlite3_stmt*, int)>> Binds;
 
-      SQLiteSerializationContext(sqlite3* db, const std::string& name, const IDataContract::Schema& schema);
+      SQLiteSerializationContext(sqlite3* db, const std::string& name, const IDataContract::Schema& schema, Transaction& transaction);
       virtual ~SQLiteSerializationContext();
 
       virtual ISerialized* apply();
-      virtual void sint(const std::string& name, const int& value);
+      virtual void integer(const std::string& name, const int& value);
+      virtual void number(const std::string& name, const double& value);
+      virtual void string(const std::string& name, const std::string& value);
+      virtual void wstring(const std::string& name, const std::wstring& value);
       virtual void binary(const std::string& name, const std::vector<unsigned char>& value);
 
    private:
+      Transaction& _transaction;
       std::unordered_map<std::string, Slot> _map;
       Binds _pk_binds;
       sqlite3_stmt* _stmt;
+      sqlite3* _db;
+      bool _in_transaction;
 
       const Slot& bind(const std::string& name);
       void check_errors(int rc) const;

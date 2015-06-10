@@ -71,6 +71,38 @@ namespace seril {
       return sqlite3_column_int(_stmt, get_column(name));
    }
 
+   unsigned int SQLiteDeserializationContext::uint(const std::string& name) {
+      return (unsigned int)sqlite3_column_int(_stmt, get_column(name));
+   }
+
+   float SQLiteDeserializationContext::fnumber(const std::string& name) {
+      return (float)sqlite3_column_double(_stmt, get_column(name));
+   }
+
+   double SQLiteDeserializationContext::dnumber(const std::string& name) {
+      return sqlite3_column_double(_stmt, get_column(name));
+   }
+
+   std::string SQLiteDeserializationContext::string(const std::string& name) {
+      auto pos = get_column(name);
+
+      auto text = reinterpret_cast<const char*>(sqlite3_column_text(_stmt, pos));
+      auto size = sqlite3_column_bytes(_stmt, pos);
+
+      return std::move(std::string(text, text + size));
+   }
+
+   std::wstring SQLiteDeserializationContext::wstring(const std::string& name) {
+      static_assert(sizeof(std::wstring::value_type) != 16, "System's wchar_t is other than 16 bits long which is not supported");
+
+      auto pos = get_column(name);
+
+      auto text = reinterpret_cast<const wchar_t*>(sqlite3_column_text16(_stmt, pos));
+      auto size = sqlite3_column_bytes(_stmt, pos);
+
+      return std::move(std::wstring(text, text + size));
+   }
+
    std::vector<unsigned char> SQLiteDeserializationContext::binary(const std::string& name) {
       auto pos = get_column(name);
 

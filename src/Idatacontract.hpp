@@ -10,6 +10,7 @@ namespace seril {
    class ISerializationContext;
    class IDeserializationContext;
    class ISerialized;
+   class Transaction;
 
    class IDataContract {
    public:
@@ -24,7 +25,7 @@ namespace seril {
       virtual ~IDataContract() {}
 
       virtual IQueryContext* query() = 0;
-      virtual ISerializationContext* serialization(const std::string& name, const Schema& schema) = 0;
+      virtual ISerializationContext* serialization(const std::string& name, const Schema& schema, Transaction& transaction) = 0;
       virtual IDeserializationContext* deserialization(const std::string& name, const Schema& schema, const std::shared_ptr<ISerialized>& serialized = nullptr) = 0;
    };
 
