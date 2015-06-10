@@ -10,12 +10,15 @@ namespace seril {
 
    class SQLiteDataContract : public IDataContract {
    public:
-      SQLiteDataContract(sqlite3* db);
+      SQLiteDataContract(sqlite3* db = nullptr);
+      SQLiteDataContract(SQLiteDataContract&& other);
       virtual ~SQLiteDataContract();
 
       virtual SQLiteQueryContext* query();
       virtual SQLiteSerializationContext* serialization(const std::string& name, const Schema& schema);
       virtual SQLiteDeserializationContext* deserialization(const std::string& name, const Schema& schema, const std::shared_ptr<ISerialized>& serialized);
+
+      SQLiteDataContract& operator =(SQLiteDataContract&& other);
 
    private:
       static bool is_valid_name(const std::string& str);
@@ -25,6 +28,9 @@ namespace seril {
 
       sqlite3* _db;
       std::unordered_set<std::string> _closed_set;
+
+      SQLiteDataContract(const SQLiteDataContract&);
+      SQLiteDataContract& operator =(const SQLiteDataContract&);
    };
 
 }

@@ -9,8 +9,15 @@ namespace seril {
 
    }
 
+   SQLiteDataContract::SQLiteDataContract(SQLiteDataContract&& other)
+      : _db(std::move(other._db)), _closed_set(std::move(_closed_set))
+   {
+      other._db = nullptr;
+   }
+
    SQLiteDataContract::~SQLiteDataContract() {
-      sqlite3_close(_db);
+      if (_db != nullptr)
+         sqlite3_close(_db);
    }
 
    SQLiteQueryContext* SQLiteDataContract::query() {
@@ -116,6 +123,17 @@ namespace seril {
    void SQLiteDataContract::check_errors(int rc) const {
       if (rc != SQLITE_OK)
          throw Exception(std::string("SQLite error: ") + sqlite3_errstr(rc));
+   }
+
+   SQLiteDataContract& SQLiteDataContract::operator =(SQLiteDataContract&& other) {
+      if (this != &other) {
+         _db = std::move(other._db);
+         _closed_set = std::move(other._closed_set);
+
+         other._db = nullptr;
+      }
+
+      return *this;
    }
 
    bool SQLiteDataContract::is_valid_name(const std::string& str) {

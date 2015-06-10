@@ -27,7 +27,7 @@ namespace seril {
       sql << ") VALUES(";
 
       for (auto it = std::begin(schema); it != std::end(schema); ++it) {
-         const Slot s = { (int)std::distance(it, std::begin(schema)), (*it)->is(IDataColumn::Identifier), false };
+         const Slot s = { (int)std::distance(it, std::begin(schema)) + 1, (*it)->is(IDataColumn::Identifier), false };
 
          _map.insert(std::make_pair((*it)->name(), s));
 

@@ -46,8 +46,8 @@ namespace seril {
 
       check_errors(sqlite3_prepare_v2(db, select.data(), (int)select.size(), &_stmt, nullptr));
 
-      for (auto &bind : sql_serialized->binds())
-         bind.second(_stmt, get_column(bind.first));
+      for (auto it = std::begin(sql_serialized->binds()); it != std::end(sql_serialized->binds()); ++it)
+         it->second(_stmt, (int)std::distance(it, std::begin(sql_serialized->binds())) + 1);
    }
 
    SQLiteDeserializationContext::~SQLiteDeserializationContext() {
