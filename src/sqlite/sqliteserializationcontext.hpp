@@ -1,8 +1,8 @@
 #pragma once
 #include "Idatacontract.hpp"
 #include "Iserializationcontext.hpp"
+#include "sqlitequerycontext.hpp"
 #include <unordered_map>
-#include <functional>
 #include <sqlite/sqlite3.h>
 
 namespace seril {
@@ -18,8 +18,6 @@ namespace seril {
          bool binded;
       };
 
-      typedef std::unordered_map<std::string, std::function<int(sqlite3_stmt*, int)>> Binds;
-
       SQLiteSerializationContext(sqlite3* db, const std::string& name, const IDataContract::Schema& schema, Transaction& transaction);
       virtual ~SQLiteSerializationContext();
 
@@ -33,9 +31,9 @@ namespace seril {
    private:
       Transaction& _transaction;
       std::unordered_map<std::string, Slot> _map;
-      Binds _pk_binds;
       sqlite3_stmt* _stmt;
       sqlite3* _db;
+      SQLiteQueryContext _pk_query;
       bool _in_transaction;
 
       const Slot& bind(const std::string& name);

@@ -21,6 +21,7 @@ namespace seril {
 
    }
 
+
    SchemaIsEmptyException::SchemaIsEmptyException(const std::string& name)
       : Exception("Schema cannot be empty: " + name)
    {
@@ -28,17 +29,6 @@ namespace seril {
    }
 
    SchemaIsEmptyException::~SchemaIsEmptyException() {
-
-   }
-
-
-   ColumnAlreadyExistsException::ColumnAlreadyExistsException(const std::string& column)
-      : Exception("Column with the same name already exists in schema: " + column)
-   {
-
-   }
-
-   ColumnAlreadyExistsException::~ColumnAlreadyExistsException() {
 
    }
 
@@ -54,35 +44,13 @@ namespace seril {
    }
 
 
-   IdentifierColumnIsNullException::IdentifierColumnIsNullException(const std::string& column)
-      : Exception("Identifier column cannot be empty: " + column)
+   UnsupportedColumnException::UnsupportedColumnException(const std::string& column)
+      : Exception("Unsupported column: " + column)
    {
 
    }
 
-   IdentifierColumnIsNullException::~IdentifierColumnIsNullException() {
-
-   }
-
-
-   ColumnTypeMismatchException::ColumnTypeMismatchException(const std::string& column)
-      : Exception("Column type does not match the requested value type: " + column)
-   {
-
-   }
-
-   ColumnTypeMismatchException::~ColumnTypeMismatchException() {
-
-   }
-
-
-   ColumnDoesNotAllowNullsException::ColumnDoesNotAllowNullsException(const std::string& column)
-      : Exception("Column is NotNull but has no value")
-   {
-
-   }
-
-   ColumnDoesNotAllowNullsException::~ColumnDoesNotAllowNullsException() {
+   UnsupportedColumnException::~UnsupportedColumnException() {
 
    }
 

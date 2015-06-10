@@ -1,18 +1,18 @@
 #pragma once
 #include "Iserialized.hpp"
-#include "sqliteserializationcontext.hpp"
+#include "sqlitequerycontext.hpp"
 
 namespace seril {
 
    class SQLiteSerialized : public ISerialized {
    public:
-      SQLiteSerialized(SQLiteSerializationContext::Binds&& binds);
+      SQLiteSerialized(SQLiteQueryContext::Binds&& binds);
       virtual ~SQLiteSerialized();
 
-      const SQLiteSerializationContext::Binds& binds() const;
+      const SQLiteQueryContext::Binds& binds() const;
 
    private:
-      SQLiteSerializationContext::Binds _binds;
+      SQLiteQueryContext::Binds _binds;
    };
 
 }

@@ -69,11 +69,17 @@ namespace seril {
          if (column->is_integer())
             sql << " INT";
 
+         else if (column->is_number())
+            sql << " REAL";
+
+         else if (column->is_string())
+            sql << " TEXT";
+
          else if (column->is_binary())
             sql << " BLOB";
 
          else
-            throw ColumnTypeMismatchException(column->name());
+            throw UnsupportedColumnException(column->name());
 
          if (column->is(IDataColumn::NotNull))
             sql << " NOT NULL";

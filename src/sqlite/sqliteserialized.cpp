@@ -2,7 +2,7 @@
 
 namespace seril {
 
-   SQLiteSerialized::SQLiteSerialized(SQLiteSerializationContext::Binds&& binds)
+   SQLiteSerialized::SQLiteSerialized(SQLiteQueryContext::Binds&& binds)
       : _binds(std::move(binds))
    {
 
@@ -12,7 +12,7 @@ namespace seril {
 
    }
 
-   const SQLiteSerializationContext::Binds& SQLiteSerialized::binds() const {
+   const SQLiteQueryContext::Binds& SQLiteSerialized::binds() const {
       return _binds;
    }
 

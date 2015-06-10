@@ -1,6 +1,5 @@
 #include "sqliteserializationcontext.hpp"
 #include "serializationexception.hpp"
-#include "sqliteserialized.hpp"
 #include "transaction.hpp"
 #include <sstream>
 #include <thread>
@@ -8,7 +7,7 @@
 namespace seril {
 
    SQLiteSerializationContext::SQLiteSerializationContext(sqlite3* db, const std::string& name, const IDataContract::Schema& schema, Transaction& transaction)
-      : _transaction(transaction), _map(), _stmt(nullptr), _db(db), _in_transaction(false)
+      : _transaction(transaction), _map(), _stmt(nullptr), _db(db), _pk_query(), _in_transaction(false)
    {
       if (schema.empty())
          throw SchemaIsEmptyException(name);
@@ -25,6 +24,7 @@ namespace seril {
       _in_transaction = true;
 
       std::stringstream sql;
+      int position = 0;
 
       sql << "INSERT OR REPLACE INTO ";
       sql << name;
@@ -40,7 +40,7 @@ namespace seril {
       sql << ") VALUES(";
 
       for (auto it = std::begin(schema); it != std::end(schema); ++it) {
-         const Slot s = { (int)std::distance(it, std::begin(schema)) + 1, (*it)->is(IDataColumn::Identifier), false };
+         const Slot s = { ++position, (*it)->is(IDataColumn::Identifier), false };
 
          _map.insert(std::make_pair((*it)->name(), s));
 
@@ -102,7 +102,7 @@ namespace seril {
          }
       }
 
-      return new SQLiteSerialized(std::move(_pk_binds));
+      return _pk_query.apply();
    }
 
    void SQLiteSerializationContext::integer(const std::string& name, const int& value) {
@@ -111,9 +111,7 @@ namespace seril {
       check_errors(sqlite3_bind_int(_stmt, slot.position, value));
 
       if (slot.is_pk)
-         _pk_binds.insert(std::make_pair(name, [value](sqlite3_stmt* stmt, int position) {
-            return sqlite3_bind_int(stmt, position, value);
-         }));
+         _pk_query.integer(name, value);
    }
 
    void SQLiteSerializationContext::number(const std::string& name, const double& value) {
@@ -122,9 +120,7 @@ namespace seril {
       check_errors(sqlite3_bind_double(_stmt, slot.position, (double)value));
 
       if (slot.is_pk)
-         _pk_binds.insert(std::make_pair(name, [value](sqlite3_stmt* stmt, int position) {
-         return sqlite3_bind_double(stmt, position, (double)value);
-      }));
+         _pk_query.number(name, value);
    }
 
    void SQLiteSerializationContext::string(const std::string& name, const std::string& value) {
@@ -133,9 +129,7 @@ namespace seril {
       check_errors(sqlite3_bind_text(_stmt, slot.position, value.data(), (int)value.size(), SQLITE_TRANSIENT));
 
       if (slot.is_pk)
-         _pk_binds.insert(std::make_pair(name, [value](sqlite3_stmt* stmt, int position) {
-            return sqlite3_bind_text(stmt, position, value.data(), (int)value.size(), SQLITE_TRANSIENT);
-         }));
+         _pk_query.string(name, value);
    }
 
    void SQLiteSerializationContext::wstring(const std::string& name, const std::wstring& value) {
@@ -146,9 +140,7 @@ namespace seril {
       check_errors(sqlite3_bind_text16(_stmt, slot.position, value.data(), (int)value.size(), SQLITE_TRANSIENT));
 
       if (slot.is_pk)
-         _pk_binds.insert(std::make_pair(name, [value](sqlite3_stmt* stmt, int position) {
-            return sqlite3_bind_text16(stmt, position, value.data(), (int)value.size(), SQLITE_TRANSIENT);
-         }));
+         _pk_query.wstring(name, value);
    }
 
    void SQLiteSerializationContext::binary(const std::string& name, const std::vector<unsigned char>& value) {

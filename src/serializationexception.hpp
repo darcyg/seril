@@ -21,34 +21,16 @@ namespace seril {
       virtual ~SchemaIsEmptyException();
    };
 
-   class ColumnAlreadyExistsException : public Exception {
-   public:
-      ColumnAlreadyExistsException(const std::string& column);
-      virtual ~ColumnAlreadyExistsException();
-   };
-
    class UnknownColumnException : public Exception {
    public:
       UnknownColumnException(const std::string& column);
       virtual ~UnknownColumnException();
    };
 
-   class IdentifierColumnIsNullException : public Exception {
+   class UnsupportedColumnException : public Exception {
    public:
-      IdentifierColumnIsNullException(const std::string& column);
-      virtual ~IdentifierColumnIsNullException();
-   };
-
-   class ColumnTypeMismatchException : public Exception {
-   public:
-      ColumnTypeMismatchException(const std::string& column);
-      virtual ~ColumnTypeMismatchException();
-   };
-
-   class ColumnDoesNotAllowNullsException : public Exception {
-   public:
-      ColumnDoesNotAllowNullsException(const std::string& column);
-      virtual ~ColumnDoesNotAllowNullsException();
+      UnsupportedColumnException(const std::string& column);
+      virtual ~UnsupportedColumnException();
    };
 
 }

@@ -15,10 +15,18 @@ namespace seril {
    }
 
    bool Column::is(const Flag& flag) const {
-      return (_flags & flag) == flag;
+      return (_flags & flag) == (unsigned int) flag;
    }
 
    bool Column::is_integer() const {
+      return false;
+   }
+
+   bool Column::is_number() const {
+      return false;
+   }
+
+   bool Column::is_string() const {
       return false;
    }
 

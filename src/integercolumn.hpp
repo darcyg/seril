@@ -5,15 +5,10 @@ namespace seril {
 
    class IntegerColumn : public Column {
    public:
-      IntegerColumn(const std::string& name, const bool& is_unsigned, const unsigned int& flags);
+      IntegerColumn(const std::string& name, const unsigned int& flags = 0);
       virtual ~IntegerColumn();
 
-      bool is_unsigned() const;
-
       virtual bool is_integer() const;
-
-   private:
-      bool _is_unsigned;
    };
 
 }

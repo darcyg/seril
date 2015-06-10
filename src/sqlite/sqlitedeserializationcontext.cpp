@@ -13,11 +13,12 @@ namespace seril {
          throw SchemaIsEmptyException(name);
 
       std::stringstream sql;
+      int position = 0;
 
       sql << "SELECT ";
 
       for (auto it = std::begin(schema); it != std::end(schema); ++it) {
-         _map.insert(std::make_pair((*it)->name(), (int)std::distance(it, std::begin(schema))));
+         _map.insert(std::make_pair((*it)->name(), position++));
 
          if (it != std::begin(schema))
             sql << ", ";
