@@ -23,6 +23,8 @@ Full usage example for serialization and deserialization of object states *:
 #include <transaction.hpp>
 #include <sqlite/sqlitedatacontract.hpp>
 #include <string>
+#include <sqlite3.h>
+#include <iostream>
 
 using namespace seril;
 
@@ -38,7 +40,7 @@ class Package {
 public:
    Package(const std::string& filename) : _contract() {
       sqlite3* db;
-      sqlite3_open(&db);
+      sqlite3_open(filename.data(), &db);
 
       _contract = std::move(SQLiteDataContract(db));
    }
@@ -57,7 +59,7 @@ private:
 
 
 static const std::string g_SchemaName("Greeter");
-static const IDataContract::Schema = {
+static const IDataContract::Schema g_Schema = {
    std::make_shared<IntegerColumn>("Id", IDataColumn::Identifier | IDataColumn::NotNull),
    std::make_shared<StringColumn>("Greeting", IDataColumn::NotNull)
 };
