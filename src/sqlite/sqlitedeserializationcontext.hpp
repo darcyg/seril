@@ -8,7 +8,7 @@ namespace seril {
 
    class SQLiteDeserializationContext : public IDeserializationContext {
    public:
-      SQLiteDeserializationContext(sqlite3* db, const std::string& name, const IDataContract::Schema& schema, const std::shared_ptr<ISerialized>& serialized);
+      SQLiteDeserializationContext(sqlite3* db, const std::string& name, const IDataContract::Schema& schema, const ISerialized* serialized);
       virtual ~SQLiteDeserializationContext();
 
       virtual bool next();

@@ -26,7 +26,7 @@ namespace seril {
 
       virtual IQueryContext* query() = 0;
       virtual ISerializationContext* serialization(const std::string& name, const Schema& schema, Transaction& transaction) = 0;
-      virtual IDeserializationContext* deserialization(const std::string& name, const Schema& schema, const std::shared_ptr<ISerialized>& serialized = nullptr) = 0;
+      virtual IDeserializationContext* deserialization(const std::string& name, const Schema& schema, const ISerialized* serialized = nullptr) = 0;
    };
 
 }

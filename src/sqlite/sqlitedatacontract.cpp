@@ -32,7 +32,7 @@ namespace seril {
       return new SQLiteSerializationContext(_db, name, schema, transaction);
    }
 
-   SQLiteDeserializationContext* SQLiteDataContract::deserialization(const std::string& name, const IDataContract::Schema& schema, const std::shared_ptr<ISerialized>& serialized) {
+   SQLiteDeserializationContext* SQLiteDataContract::deserialization(const std::string& name, const IDataContract::Schema& schema, const ISerialized* serialized) {
       use_schema(name, schema);
 
       return new SQLiteDeserializationContext(_db, name, schema, serialized);

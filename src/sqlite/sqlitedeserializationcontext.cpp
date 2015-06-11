@@ -6,7 +6,7 @@
 
 namespace seril {
 
-   SQLiteDeserializationContext::SQLiteDeserializationContext(sqlite3* db, const std::string& name, const IDataContract::Schema& schema, const std::shared_ptr<ISerialized>& serialized)
+   SQLiteDeserializationContext::SQLiteDeserializationContext(sqlite3* db, const std::string& name, const IDataContract::Schema& schema, const ISerialized* serialized)
       : _map(), _stmt(nullptr)
    {
       if (schema.empty())
@@ -29,9 +29,9 @@ namespace seril {
       sql << " FROM ";
       sql << name;
 
-      auto sql_serialized = std::static_pointer_cast<SQLiteSerialized>(serialized);
+      auto sql_serialized = static_cast<const SQLiteSerialized*>(serialized);
 
-      if (!sql_serialized->binds().empty()) {
+      if (sql_serialized != nullptr && !sql_serialized->binds().empty()) {
          sql << " WHERE ";
 
          for (auto it = std::begin(sql_serialized->binds()); it != std::end(sql_serialized->binds()); ++it) {
@@ -47,10 +47,12 @@ namespace seril {
 
       check_errors(sqlite3_prepare_v2(db, select.data(), (int)select.size(), &_stmt, nullptr));
 
-      position = 0;
+      if (sql_serialized != nullptr) {
+         position = 0;
 
-      for (auto &bind : sql_serialized->binds())
-         bind.second(_stmt, ++position);
+         for (auto &bind : sql_serialized->binds())
+            bind.second(_stmt, ++position);
+      }
    }
 
    SQLiteDeserializationContext::~SQLiteDeserializationContext() {
