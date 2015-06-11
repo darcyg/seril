@@ -38,7 +38,7 @@ namespace seril {
       static_assert(sizeof(std::wstring::value_type) != 16, "System's wchar_t is other than 16 bits long which is not supported");
 
       _binds.insert(std::make_pair(name, [value](sqlite3_stmt* stmt, int position) {
-         return sqlite3_bind_text16(stmt, position, value.data(), (int)value.size(), SQLITE_TRANSIENT);
+         return sqlite3_bind_text16(stmt, position, value.data(), (int)(value.size() * sizeof(std::wstring::value_type)), SQLITE_TRANSIENT);
       }));
    }
 

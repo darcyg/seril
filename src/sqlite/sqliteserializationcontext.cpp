@@ -137,7 +137,7 @@ namespace seril {
 
       auto &slot = bind(name);
 
-      check_errors(sqlite3_bind_text16(_stmt, slot.position, value.data(), (int)value.size(), SQLITE_TRANSIENT));
+      check_errors(sqlite3_bind_text16(_stmt, slot.position, value.data(), (int)(value.length() * sizeof(std::wstring::value_type)), SQLITE_TRANSIENT));
 
       if (slot.is_pk)
          _pk_query.wstring(name, value);
