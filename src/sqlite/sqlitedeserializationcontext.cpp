@@ -6,8 +6,8 @@
 
 namespace seril {
 
-   SQLiteDeserializationContext::SQLiteDeserializationContext(sqlite3* db, const std::string& name, const IDataContract::Schema& schema, const ISerialized* serialized)
-      : _map(), _stmt(nullptr)
+   SQLiteDeserializationContext::SQLiteDeserializationContext(SQLiteConnection&& connection, const std::string& name, const IDataContract::Schema& schema, const ISerialized* serialized)
+      : _connection(std::move(connection)), _map(), _stmt(nullptr)
    {
       if (schema.empty())
          throw SchemaIsEmptyException(name);
@@ -45,7 +45,7 @@ namespace seril {
 
       const std::string select(sql.str());
 
-      check_errors(sqlite3_prepare_v2(db, select.data(), (int)select.size(), &_stmt, nullptr));
+      check_errors(sqlite3_prepare_v2(*_connection, select.data(), (int)select.size(), &_stmt, nullptr));
 
       if (sql_serialized != nullptr) {
          position = 0;

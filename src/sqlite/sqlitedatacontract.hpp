@@ -1,22 +1,23 @@
 #pragma once
 #include "Idatacontract.hpp"
-#include "sqlitequerycontext.hpp"
-#include "sqliteserializationcontext.hpp"
-#include "sqlitedeserializationcontext.hpp"
 #include <unordered_set>
+#include <deque>
+#include <mutex>
 #include <sqlite/sqlite3.h>
 
 namespace seril {
 
    class SQLiteDataContract : public IDataContract {
    public:
-      SQLiteDataContract(sqlite3* db = nullptr);
+      typedef std::function<sqlite3*()> ConnectionFactory;
+
+      SQLiteDataContract(const ConnectionFactory& connection_factory);
       SQLiteDataContract(SQLiteDataContract&& other);
       virtual ~SQLiteDataContract();
 
-      virtual SQLiteQueryContext* query();
-      virtual SQLiteSerializationContext* serialization(const std::string& name, const Schema& schema, Transaction& transaction);
-      virtual SQLiteDeserializationContext* deserialization(const std::string& name, const Schema& schema, const ISerialized* serialized);
+      virtual IQueryContext* query();
+      virtual ISerializationContext* serialization(const std::string& name, const Schema& schema, Transaction& transaction);
+      virtual IDeserializationContext* deserialization(const std::string& name, const Schema& schema, const ISerialized* serialized);
 
       SQLiteDataContract& operator =(SQLiteDataContract&& other);
 
@@ -26,11 +27,18 @@ namespace seril {
       void use_schema(const std::string& name, const Schema& schema);
       void check_errors(int rc) const;
 
-      sqlite3* _db;
+      sqlite3* open();
+      void close(sqlite3* connection);
+
+      ConnectionFactory _connection_factory;
+      std::mutex _mutex;
+      std::deque<sqlite3*> _connection_pool;
       std::unordered_set<std::string> _closed_set;
 
       SQLiteDataContract(const SQLiteDataContract&);
       SQLiteDataContract& operator =(const SQLiteDataContract&);
+
+      friend class SQLiteConnection;
    };
 
 }

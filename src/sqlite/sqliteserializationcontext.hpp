@@ -2,6 +2,7 @@
 #include "Idatacontract.hpp"
 #include "Iserializationcontext.hpp"
 #include "sqlitequerycontext.hpp"
+#include "sqliteconnection.hpp"
 #include <unordered_map>
 #include <sqlite/sqlite3.h>
 
@@ -18,7 +19,7 @@ namespace seril {
          bool binded;
       };
 
-      SQLiteSerializationContext(sqlite3* db, const std::string& name, const IDataContract::Schema& schema, Transaction& transaction);
+      SQLiteSerializationContext(SQLiteConnection&& connection, const std::string& name, const IDataContract::Schema& schema, Transaction& transaction);
       virtual ~SQLiteSerializationContext();
 
       virtual ISerialized* apply();
@@ -29,10 +30,10 @@ namespace seril {
       virtual void binary(const std::string& name, const std::vector<unsigned char>& value);
 
    private:
+      SQLiteConnection _connection;
       Transaction& _transaction;
       std::unordered_map<std::string, Slot> _map;
       sqlite3_stmt* _stmt;
-      sqlite3* _db;
       SQLiteQueryContext _pk_query;
       bool _in_transaction;
 

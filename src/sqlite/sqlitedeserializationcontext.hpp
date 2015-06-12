@@ -1,6 +1,7 @@
 #pragma once
 #include "Ideserializationcontext.hpp"
 #include "Idatacontract.hpp"
+#include "sqliteconnection.hpp"
 #include <unordered_map>
 #include <sqlite/sqlite3.h>
 
@@ -8,7 +9,7 @@ namespace seril {
 
    class SQLiteDeserializationContext : public IDeserializationContext {
    public:
-      SQLiteDeserializationContext(sqlite3* db, const std::string& name, const IDataContract::Schema& schema, const ISerialized* serialized);
+      SQLiteDeserializationContext(SQLiteConnection&& connection, const std::string& name, const IDataContract::Schema& schema, const ISerialized* serialized);
       virtual ~SQLiteDeserializationContext();
 
       virtual bool next();
@@ -21,6 +22,7 @@ namespace seril {
       virtual std::vector<unsigned char> binary(const std::string& name);
 
    private:
+      SQLiteConnection _connection;
       std::unordered_map<std::string, int> _map;
       sqlite3_stmt* _stmt;
 

@@ -6,15 +6,15 @@
 
 namespace seril {
 
-   SQLiteSerializationContext::SQLiteSerializationContext(sqlite3* db, const std::string& name, const IDataContract::Schema& schema, Transaction& transaction)
-      : _transaction(transaction), _map(), _stmt(nullptr), _db(db), _pk_query(), _in_transaction(false)
+   SQLiteSerializationContext::SQLiteSerializationContext(SQLiteConnection&& connection, const std::string& name, const IDataContract::Schema& schema, Transaction& transaction)
+      : _connection(std::move(connection)), _transaction(transaction), _map(), _stmt(nullptr), _pk_query(), _in_transaction(false)
    {
       if (schema.empty())
          throw SchemaIsEmptyException(name);
 
       try {
          if (_transaction.join())
-            check_errors(sqlite3_exec(_db, "BEGIN TRANSACTION", nullptr, nullptr, nullptr));
+            check_errors(sqlite3_exec(*_connection, "BEGIN TRANSACTION", nullptr, nullptr, nullptr));
       }
       catch (...) {
          _transaction.leave();
@@ -54,7 +54,7 @@ namespace seril {
 
       const std::string replace(sql.str());
 
-      check_errors(sqlite3_prepare_v2(_db, replace.data(), (int)replace.size(), &_stmt, nullptr));
+      check_errors(sqlite3_prepare_v2(*_connection, replace.data(), (int)replace.size(), &_stmt, nullptr));
    }
 
    SQLiteSerializationContext::~SQLiteSerializationContext() {
@@ -62,7 +62,7 @@ namespace seril {
          sqlite3_finalize(_stmt);
 
       if (_in_transaction && _transaction.leave())
-         sqlite3_exec(_db, "ROLLBACK TRANSACTION", nullptr, nullptr, nullptr);
+         sqlite3_exec(*_connection, "ROLLBACK TRANSACTION", nullptr, nullptr, nullptr);
    }
 
    ISerialized* SQLiteSerializationContext::apply() {
@@ -86,13 +86,13 @@ namespace seril {
          _in_transaction = false;
 
          for (int rc;;) {
-            rc = sqlite3_exec(_db, "COMMIT TRANSACTION", nullptr, nullptr, nullptr);
+            rc = sqlite3_exec(*_connection, "COMMIT TRANSACTION", nullptr, nullptr, nullptr);
 
             if (rc != SQLITE_BUSY)
                break;
 
             if (max_spins == 0) {
-               sqlite3_exec(_db, "ROLLBACK TRANSACTION", nullptr, nullptr, nullptr);
+               sqlite3_exec(*_connection, "ROLLBACK TRANSACTION", nullptr, nullptr, nullptr);
 
                throw Exception("Cannot commit the transaction, underlying provider is busy");
             }

@@ -1,51 +1,80 @@
 #include "sqlitedatacontract.hpp"
 #include "serializationexception.hpp"
+#include "sqliteconnection.hpp"
+#include "sqliteserializationcontext.hpp"
+#include "sqlitedeserializationcontext.hpp"
+#include "sqlitequerycontext.hpp"
 #include "column.hpp"
 #include <sstream>
 
 namespace seril {
 
-   SQLiteDataContract::SQLiteDataContract(sqlite3* db)
-      : _db(db), _closed_set()
+   SQLiteDataContract::SQLiteDataContract(const ConnectionFactory& connection_factory)
+      : _connection_factory(connection_factory), _mutex(), _connection_pool(), _closed_set()
    {
 
    }
 
    SQLiteDataContract::SQLiteDataContract(SQLiteDataContract&& other)
-      : _db(std::move(other._db)), _closed_set(std::move(_closed_set))
+      : _connection_factory(std::move(other._connection_factory)), _mutex(), 
+        _connection_pool(std::move(other._connection_pool)), _closed_set(std::move(other._closed_set))
    {
-      other._db = nullptr;
+
    }
 
    SQLiteDataContract::~SQLiteDataContract() {
-      if (_db != nullptr)
-         sqlite3_close(_db);
+      std::unique_lock<std::mutex> lock(_mutex);
+
+      for (auto &connection : _connection_pool)
+         sqlite3_close(connection);
    }
 
-   SQLiteQueryContext* SQLiteDataContract::query() {
+   IQueryContext* SQLiteDataContract::query() {
       return new SQLiteQueryContext();
    }
 
-   SQLiteSerializationContext* SQLiteDataContract::serialization(const std::string& name, const IDataContract::Schema& schema, Transaction& transaction) {
+   ISerializationContext* SQLiteDataContract::serialization(const std::string& name, const IDataContract::Schema& schema, Transaction& transaction) {
       use_schema(name, schema);
 
-      return new SQLiteSerializationContext(_db, name, schema, transaction);
+      return new SQLiteSerializationContext(SQLiteConnection(*this), name, schema, transaction);
    }
 
-   SQLiteDeserializationContext* SQLiteDataContract::deserialization(const std::string& name, const IDataContract::Schema& schema, const ISerialized* serialized) {
+   IDeserializationContext* SQLiteDataContract::deserialization(const std::string& name, const IDataContract::Schema& schema, const ISerialized* serialized) {
       use_schema(name, schema);
 
-      return new SQLiteDeserializationContext(_db, name, schema, serialized);
+      return new SQLiteDeserializationContext(SQLiteConnection(*this), name, schema, serialized);
+   }
+
+   sqlite3* SQLiteDataContract::open() {
+      std::unique_lock<std::mutex> lock(_mutex);
+
+      if (_connection_pool.empty())
+         return _connection_factory();
+
+      auto connection = _connection_pool.front();
+      _connection_pool.pop_front();
+
+      return connection;
+   }
+
+   void SQLiteDataContract::close(sqlite3* connection) {
+      std::unique_lock<std::mutex> lock(_mutex);
+
+      _connection_pool.push_back(connection);
    }
 
    void SQLiteDataContract::use_schema(const std::string& name, const IDataContract::Schema& schema) {
       if (!is_valid_name(name))
          throw InvalidNameException(name);
 
-      auto it = _closed_set.find(name);
+      {
+         std::unique_lock<std::mutex> lock(_mutex);
 
-      if (it != std::end(_closed_set))
-         return;
+         auto it = _closed_set.find(name);
+
+         if (it != std::end(_closed_set))
+            return;
+      }
 
       if (schema.empty())
          throw SchemaIsEmptyException(name);
@@ -111,21 +140,27 @@ namespace seril {
 
       const std::string create(sql.str());
 
-      sqlite3_stmt* stmt;
-      check_errors(sqlite3_prepare_v2(_db, create.data(), (int)create.size(), &stmt, nullptr));
+      {
+         SQLiteConnection connection(*this);
+         sqlite3_stmt* stmt;
+         check_errors(sqlite3_prepare_v2(*connection, create.data(), (int)create.size(), &stmt, nullptr));
 
-      try {
-         auto rc = sqlite3_step(stmt);
+         try {
+            auto rc = sqlite3_step(stmt);
 
-         if (rc != SQLITE_DONE)
-            check_errors(rc);
+            if (rc != SQLITE_DONE)
+               check_errors(rc);
+         }
+         catch (...) {
+            sqlite3_finalize(stmt);
+            throw;
+         }
       }
-      catch (...) {
-         sqlite3_finalize(stmt);
-         throw;
-      }
 
-      _closed_set.insert(name);
+      {
+         std::unique_lock<std::mutex> lock(_mutex);
+         _closed_set.insert(name);
+      }
    }
 
    void SQLiteDataContract::check_errors(int rc) const {
@@ -135,10 +170,9 @@ namespace seril {
 
    SQLiteDataContract& SQLiteDataContract::operator =(SQLiteDataContract&& other) {
       if (this != &other) {
-         _db = std::move(other._db);
+         _connection_factory = std::move(other._connection_factory);
+         _connection_pool = std::move(other._connection_pool);
          _closed_set = std::move(other._closed_set);
-
-         other._db = nullptr;
       }
 
       return *this;
