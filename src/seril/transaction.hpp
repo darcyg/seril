@@ -12,6 +12,9 @@ namespace seril {
       bool leave();
       bool complete();
 
+      Transaction(const Transaction&) = delete;
+      Transaction& operator =(const Transaction&) = delete;
+
    private:
       std::atomic<size_t> _joins, _leaves, _completions;
    };

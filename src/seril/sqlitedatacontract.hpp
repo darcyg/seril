@@ -3,7 +3,7 @@
 #include <unordered_set>
 #include <deque>
 #include <mutex>
-#include <sqlite/sqlite3.h>
+#include <sqlite3.h>
 
 namespace seril {
 

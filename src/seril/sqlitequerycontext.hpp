@@ -3,7 +3,7 @@
 #include "Idatacontract.hpp"
 #include <unordered_map>
 #include <functional>
-#include <sqlite/sqlite3.h>
+#include <sqlite3.h>
 
 namespace seril {
 

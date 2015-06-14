@@ -4,7 +4,7 @@
 #include "sqlitequerycontext.hpp"
 #include "sqliteconnection.hpp"
 #include <unordered_map>
-#include <sqlite/sqlite3.h>
+#include <sqlite3.h>
 
 namespace seril {
 

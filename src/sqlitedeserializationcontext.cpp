@@ -1,7 +1,6 @@
 #include "sqlitedeserializationcontext.hpp"
 #include "serializationexception.hpp"
 #include "sqliteserialized.hpp"
-#include <sqlite/sqlite3.h>
 #include <sstream>
 
 namespace seril {
