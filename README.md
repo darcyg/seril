@@ -21,6 +21,7 @@ Full usage example for serialization and deserialization of object states *:
 #include <Idatacontract.hpp>
 #include <Iserialized.hpp>
 #include <transaction.hpp>
+#include <column.hpp>
 #include <sqlitedatacontract.hpp>
 #include <string>
 #include <sqlite3.h>
@@ -62,8 +63,8 @@ private:
 
 static const std::string g_SchemaName("Greeter");
 static const IDataContract::Schema g_Schema = {
-   std::make_shared<IntegerColumn>("Id", IDataColumn::Identifier | IDataColumn::NotNull),
-   std::make_shared<StringColumn>("Greeting", IDataColumn::NotNull)
+   std::make_shared<uint_column>("Id", IDataColumn::Identifier | IDataColumn::NotNull),
+   std::make_shared<utf8_column>("Greeting", IDataColumn::NotNull)
 };
 
 // Any class that implements ISerializable interface.
@@ -80,8 +81,8 @@ public:
    virtual ISerialized* serialize(IDataContract& contract, Transaction&& transaction) const {
       std::unique_ptr<ISerializationContext> context(contract.serialization(g_SchemaName, g_Schema, transaction));
 
-      context->integer("Id", _id);
-      context->string("Greeting", _greeting);
+      context->uint("Id", _id);
+      context->utf8("Greeting", _greeting);
 
       return context->apply();
    }
@@ -89,7 +90,7 @@ public:
    virtual bool deserialize(IDataContract& contract) {
       std::unique_ptr<IQueryContext> q(contract.query());
 
-      q->integer("Id", _id);
+      q->uint("Id", _id);
 
       std::unique_ptr<ISerialized> serialized(q->apply());
 
@@ -99,7 +100,7 @@ public:
          return false;
 
       _id = context->uint("Id");
-      _greeting = context->string("Greeting");
+      _greeting = context->utf8("Greeting");
 
       return true;
    }

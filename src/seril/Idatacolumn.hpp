@@ -16,6 +16,7 @@ namespace seril {
 
       virtual const std::string& name() const = 0;
       virtual bool is(const Flag& flag) const = 0;
+      virtual unsigned int type() const = 0;
    };
 
 }

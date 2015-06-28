@@ -42,9 +42,7 @@ namespace seril {
          }
       }
 
-      const std::string select(sql.str());
-
-      check_errors(sqlite3_prepare_v2(*_connection, select.data(), (int)select.size(), &_stmt, nullptr));
+      check_errors(sqlite3_prepare_v2(*_connection, sql.str().data(), (int)sql.str().size(), &_stmt, nullptr));
 
       if (sql_serialized != nullptr) {
          position = 0;
@@ -79,15 +77,15 @@ namespace seril {
       return (unsigned int)sqlite3_column_int(_stmt, get_column(name));
    }
 
-   float SQLiteDeserializationContext::fnumber(const std::string& name) {
+   float SQLiteDeserializationContext::fpoint(const std::string& name) {
       return (float)sqlite3_column_double(_stmt, get_column(name));
    }
 
-   double SQLiteDeserializationContext::dnumber(const std::string& name) {
+   double SQLiteDeserializationContext::dpoint(const std::string& name) {
       return sqlite3_column_double(_stmt, get_column(name));
    }
 
-   std::string SQLiteDeserializationContext::string(const std::string& name) {
+   std::string SQLiteDeserializationContext::utf8(const std::string& name) {
       auto pos = get_column(name);
 
       auto text = reinterpret_cast<const char*>(sqlite3_column_text(_stmt, pos));
@@ -96,15 +94,13 @@ namespace seril {
       return std::move(std::string(text, text + size));
    }
 
-   std::wstring SQLiteDeserializationContext::wstring(const std::string& name) {
-      static_assert(sizeof(std::wstring::value_type) != 16, "System's wchar_t is other than 16 bits long which is not supported");
-
+   std::u16string SQLiteDeserializationContext::utf16(const std::string& name) {
       auto pos = get_column(name);
 
-      auto text = reinterpret_cast<const wchar_t*>(sqlite3_column_text16(_stmt, pos));
+      auto text = reinterpret_cast<const std::u16string::value_type*>(sqlite3_column_text16(_stmt, pos));
       auto size = sqlite3_column_bytes(_stmt, pos);
 
-      return std::move(std::wstring(text, text + size));
+      return std::move(std::u16string(text, text + size * sizeof(std::u16string::value_type)));
    }
 
    std::vector<unsigned char> SQLiteDeserializationContext::binary(const std::string& name) {

@@ -16,29 +16,39 @@ namespace seril {
       return new SQLiteSerialized(std::move(_binds));
    }
 
-   void SQLiteQueryContext::integer(const std::string& name, const int& value) {
+   void SQLiteQueryContext::sint(const std::string& name, const int& value) {
       _binds.insert(std::make_pair(name, [value](sqlite3_stmt* stmt, int position) {
          return sqlite3_bind_int(stmt, position, value);
       }));
    }
 
-   void SQLiteQueryContext::number(const std::string& name, const double& value) {
+   void SQLiteQueryContext::uint(const std::string& name, const unsigned int& value) {
+      _binds.insert(std::make_pair(name, [value](sqlite3_stmt* stmt, int position) {
+         return sqlite3_bind_int(stmt, position, (int)value);
+      }));
+   }
+
+   void SQLiteQueryContext::fpoint(const std::string& name, const float& value) {
+      _binds.insert(std::make_pair(name, [value](sqlite3_stmt* stmt, int position) {
+         return sqlite3_bind_double(stmt, position, (double)value);
+      }));
+   }
+
+   void SQLiteQueryContext::dpoint(const std::string& name, const double& value) {
       _binds.insert(std::make_pair(name, [value](sqlite3_stmt* stmt, int position) {
          return sqlite3_bind_double(stmt, position, value);
       }));
    }
 
-   void SQLiteQueryContext::string(const std::string& name, const std::string& value) {
+   void SQLiteQueryContext::utf8(const std::string& name, const std::string& value) {
       _binds.insert(std::make_pair(name, [value](sqlite3_stmt* stmt, int position) {
-         return sqlite3_bind_text(stmt, position, value.data(), (int)value.size(), SQLITE_TRANSIENT);
+         return sqlite3_bind_text(stmt, position, value.data(), (int)value.length(), SQLITE_TRANSIENT);
       }));
    }
 
-   void SQLiteQueryContext::wstring(const std::string& name, const std::wstring& value) {
-      static_assert(sizeof(std::wstring::value_type) != 16, "System's wchar_t is other than 16 bits long which is not supported");
-
+   void SQLiteQueryContext::utf16(const std::string& name, const std::u16string& value) {
       _binds.insert(std::make_pair(name, [value](sqlite3_stmt* stmt, int position) {
-         return sqlite3_bind_text16(stmt, position, value.data(), (int)(value.size() * sizeof(std::wstring::value_type)), SQLITE_TRANSIENT);
+         return sqlite3_bind_text16(stmt, position, value.data(), (int)(value.length() * sizeof(std::u16string::value_type)), SQLITE_TRANSIENT);
       }));
    }
 

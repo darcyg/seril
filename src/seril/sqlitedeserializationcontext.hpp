@@ -15,10 +15,10 @@ namespace seril {
       virtual bool next();
       virtual int sint(const std::string& name);
       virtual unsigned int uint(const std::string& name);
-      virtual float fnumber(const std::string& name);
-      virtual double dnumber(const std::string& name);
-      virtual std::string string(const std::string& name);
-      virtual std::wstring wstring(const std::string& name);
+      virtual float fpoint(const std::string& name);
+      virtual double dpoint(const std::string& name);
+      virtual std::string utf8(const std::string& name);
+      virtual std::u16string utf16(const std::string& name);
       virtual std::vector<unsigned char> binary(const std::string& name);
 
    private:

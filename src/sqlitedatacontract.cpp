@@ -16,7 +16,7 @@ namespace seril {
    }
 
    SQLiteDataContract::SQLiteDataContract(SQLiteDataContract&& other)
-      : _connection_factory(std::move(other._connection_factory)), _mutex(), 
+      : _connection_factory(std::move(other._connection_factory)), _mutex(),
         _connection_pool(std::move(other._connection_pool)), _closed_set(std::move(other._closed_set))
    {
 
@@ -88,32 +88,39 @@ namespace seril {
       size_t total_pks = 0;
 
       for (auto it = std::begin(schema); it != std::end(schema); ++it) {
-         auto column = std::static_pointer_cast<Column>(*it);
-
          if (it != std::begin(schema))
             sql << ", ";
 
-         sql << column->name();
+         sql << (*it)->name();
 
-         if (column->is_integer())
-            sql << " INT";
+         switch ((*it)->type()) {
+            case sint_column::type_id:
+            case uint_column::type_id:
+               sql << " INT";
+               break;
 
-         else if (column->is_number())
-            sql << " REAL";
+            case fpoint_column::type_id:
+            case dpoint_column::type_id:
+               sql << " REAL";
+               break;
 
-         else if (column->is_string())
-            sql << " TEXT";
+            case utf8_column::type_id:
+            case utf16_column::type_id:
+               sql << " TEXT";
+               break;
 
-         else if (column->is_binary())
-            sql << " BLOB";
+            case binary_column::type_id:
+               sql << " BLOB";
+               break;
 
-         else
-            throw UnsupportedColumnException(column->name());
+            default:
+               throw UnsupportedColumnException((*it)->name());
+         }
 
-         if (column->is(IDataColumn::NotNull))
+         if ((*it)->is(IDataColumn::NotNull))
             sql << " NOT NULL";
 
-         if (column->is(IDataColumn::Identifier))
+         if ((*it)->is(IDataColumn::Identifier))
             ++total_pks;
       }
 
@@ -138,12 +145,10 @@ namespace seril {
 
       sql << ')';
 
-      const std::string create(sql.str());
-
       {
          SQLiteConnection connection(*this);
          sqlite3_stmt* stmt;
-         check_errors(sqlite3_prepare_v2(*connection, create.data(), (int)create.size(), &stmt, nullptr));
+         check_errors(sqlite3_prepare_v2(*connection, sql.str().data(), (int)sql.str().size(), &stmt, nullptr));
 
          try {
             auto rc = sqlite3_step(stmt);

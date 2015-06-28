@@ -15,10 +15,12 @@ namespace seril {
       virtual ~SQLiteQueryContext();
 
       virtual ISerialized* apply();
-      virtual void integer(const std::string& name, const int& value);
-      virtual void number(const std::string& name, const double& value);
-      virtual void string(const std::string& name, const std::string& value);
-      virtual void wstring(const std::string& name, const std::wstring& value);
+      virtual void sint(const std::string& name, const int& value);
+      virtual void uint(const std::string& name, const unsigned int& value);
+      virtual void fpoint(const std::string& name, const float& value);
+      virtual void dpoint(const std::string& name, const double& value);
+      virtual void utf8(const std::string& name, const std::string& value);
+      virtual void utf16(const std::string& name, const std::u16string& value);
 
    private:
       Binds _binds;

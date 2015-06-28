@@ -52,9 +52,7 @@ namespace seril {
 
       sql << ')';
 
-      const std::string replace(sql.str());
-
-      check_errors(sqlite3_prepare_v2(*_connection, replace.data(), (int)replace.size(), &_stmt, nullptr));
+      check_errors(sqlite3_prepare_v2(*_connection, sql.str().data(), (int)sql.str().size(), &_stmt, nullptr));
    }
 
    SQLiteSerializationContext::~SQLiteSerializationContext() {
@@ -105,42 +103,58 @@ namespace seril {
       return _pk_query.apply();
    }
 
-   void SQLiteSerializationContext::integer(const std::string& name, const int& value) {
+   void SQLiteSerializationContext::sint(const std::string& name, const int& value) {
       auto &slot = bind(name);
 
       check_errors(sqlite3_bind_int(_stmt, slot.position, value));
 
       if (slot.is_pk)
-         _pk_query.integer(name, value);
+         _pk_query.sint(name, value);
    }
 
-   void SQLiteSerializationContext::number(const std::string& name, const double& value) {
+   void SQLiteSerializationContext::uint(const std::string& name, const unsigned int& value) {
+      auto &slot = bind(name);
+
+      check_errors(sqlite3_bind_int(_stmt, slot.position, (int)value));
+
+      if (slot.is_pk)
+         _pk_query.uint(name, value);
+   }
+
+   void SQLiteSerializationContext::fpoint(const std::string& name, const float& value) {
       auto &slot = bind(name);
 
       check_errors(sqlite3_bind_double(_stmt, slot.position, (double)value));
 
       if (slot.is_pk)
-         _pk_query.number(name, value);
+         _pk_query.fpoint(name, value);
    }
 
-   void SQLiteSerializationContext::string(const std::string& name, const std::string& value) {
+   void SQLiteSerializationContext::dpoint(const std::string& name, const double& value) {
       auto &slot = bind(name);
 
-      check_errors(sqlite3_bind_text(_stmt, slot.position, value.data(), (int)value.size(), SQLITE_TRANSIENT));
+      check_errors(sqlite3_bind_double(_stmt, slot.position, value));
 
       if (slot.is_pk)
-         _pk_query.string(name, value);
+         _pk_query.dpoint(name, value);
    }
 
-   void SQLiteSerializationContext::wstring(const std::string& name, const std::wstring& value) {
-      static_assert(sizeof(std::wstring::value_type) != 16, "System's wchar_t is other than 16 bits long which is not supported");
-
+   void SQLiteSerializationContext::utf8(const std::string& name, const std::string& value) {
       auto &slot = bind(name);
 
-      check_errors(sqlite3_bind_text16(_stmt, slot.position, value.data(), (int)(value.length() * sizeof(std::wstring::value_type)), SQLITE_TRANSIENT));
+      check_errors(sqlite3_bind_text(_stmt, slot.position, value.data(), (int)value.length(), SQLITE_TRANSIENT));
 
       if (slot.is_pk)
-         _pk_query.wstring(name, value);
+         _pk_query.utf8(name, value);
+   }
+
+   void SQLiteSerializationContext::utf16(const std::string& name, const std::u16string& value) {
+      auto &slot = bind(name);
+
+      check_errors(sqlite3_bind_text16(_stmt, slot.position, value.data(), (int)(value.length() * sizeof(std::u16string::value_type)), SQLITE_TRANSIENT));
+
+      if (slot.is_pk)
+         _pk_query.utf16(name, value);
    }
 
    void SQLiteSerializationContext::binary(const std::string& name, const std::vector<unsigned char>& value) {
